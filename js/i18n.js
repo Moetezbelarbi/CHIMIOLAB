@@ -59,7 +59,7 @@ export const DICT = {
 "ui.theme.photons": "Effet photoélectrique",
 "ui.theme.son": "Ondes sonores",
 "ui.theme.venturi": "Effet Venturi",
-"ui.theme.archimede": "Poussée d'Archimède"
+"ui.theme.archimede": "Poussée d'Archimède",
     "nav.level.premiere": "Première",
     "nav.level.terminale": "Terminale",
     "domain.matiere": "Constitution et transformations de la matière",
@@ -373,7 +373,7 @@ export const DICT = {
 "ui.theme.photons": "Photoelectric effect",
 "ui.theme.son": "Sound waves",
 "ui.theme.venturi": "Venturi effect",
-"ui.theme.archimede": "Archimedes' buoyancy"
+"ui.theme.archimede": "Archimedes' buoyancy",
     "nav.level.premiere": "Première (Year 12)",
     "nav.level.terminale": "Terminale (Year 13)",
     "domain.matiere": "Constitution and transformations of matter",
