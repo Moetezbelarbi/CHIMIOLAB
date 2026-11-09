@@ -15,14 +15,3 @@ export function roundToResolution(value, resolution) {
   if (resolution <= 0) return value;
   return Math.round(value / resolution) * resolution;
 }
-export function formatSigFigs(value, sig = 3) {
-  if (!isFinite(value)) return String(value);
-  if (value === 0) return "0";
-  const mag = Math.floor(Math.log10(Math.abs(value)));
-  const dec = Math.max(0, sig - 1 - mag);
-  return value.toFixed(dec);
-}
-export function relativeUncertainty(u, value) {
-  if (value === 0) return Infinity;
-  return Math.abs(u / value);
-}
