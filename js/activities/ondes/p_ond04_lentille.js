@@ -15,95 +15,155 @@ export const theme = "optique";
 export const titleKey = "pond04.title";
 
 export function mount(container) {
-  const state = { fprime: 10, OA: -15, validated: false, seed: Date.now() & 0xffffff };
+  const state = { fprime: 10, OA: -15, seed: Date.now() & 0xffffff };
   const rng = makeRng(state.seed);
-  const panel = document.createElement("div");
-  panel.className = "panel";
-  panel.innerHTML = `
-    <div class="panel-title">${t("pond04.title")}</div>
-    <p>${t("pond04.desc")}</p>
-    <div class="field"><label for="pond04-f">${t("pond04.input.f")}</label><input id="pond04-f" type="number" step="1" min="5" max="50" value="${state.fprime}"></div>
-    <div class="field"><label for="pond04-oa">${t("pond04.input.OA")}</label><input id="pond04-oa" type="number" step="0.5" min="-100" max="-1" value="${state.OA}"></div>
-    <div class="actions"><button class="btn" id="pond04-rand">${t("action.randomize")}</button><button class="btn-secondary" id="pond04-reset">${t("action.reset")}</button></div>`;
-  container.appendChild(panel);
+
+  const choice = document.createElement("div");
+  choice.className = "panel";
+  choice.innerHTML = `
+    <div class="panel-title">${t("ui.yourChoice")}</div>
+    <div class="field">
+      <label for="pond04-oa">${t("pond04.input.OA")}</label>
+      <input id="pond04-oa" type="range" min="-60" max="-2" step="0.5" value="${state.OA}">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+        <span>−60 cm</span><span id="pond04-oa-val">${state.OA} cm</span><span>−2 cm</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="pond04-run">${t("ui.measure")}</button>
+      <button class="btn-secondary" id="pond04-rand">${t("ui.randomize")}</button>
+    </div>`;
+  container.appendChild(choice);
+
   const svgWrap = document.createElement("div");
   svgWrap.className = "svg-wrap";
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 600 260");
+  svg.setAttribute("viewBox", "0 0 640 300");
   svg.setAttribute("width", "100%");
   svg.setAttribute("role", "img");
   svgWrap.appendChild(svg);
   container.appendChild(svgWrap);
-  const answerPanel = document.createElement("div");
-  answerPanel.className = "panel";
-  answerPanel.innerHTML = `
-    <div class="panel-title">${t("pond04.answer.title")}</div>
-    <div class="field"><label for="pond04-oap">${t("pond04.answer.OAprime")}</label><input id="pond04-oap" type="number" step="0.1" min="-1000" max="1000"></div>
-    <div class="actions"><button class="btn-check" id="pond04-check">${t("action.check")}</button></div>
-    <div id="pond04-status" class="status" role="status"></div>
-    <div id="pond04-corr" class="panel" style="display:none;margin-top:8px;"></div>`;
-  container.appendChild(answerPanel);
-  function drawLens() {
+
+  const measures = document.createElement("div");
+  measures.className = "panel";
+  measures.innerHTML = `<div class="panel-title">${t("ui.measure")}</div>
+    <div class="measure-grid" id="pond04-measures"></div>`;
+  container.appendChild(measures);
+
+  const resultPanel = document.createElement("div");
+  resultPanel.className = "panel";
+  resultPanel.innerHTML = `<div class="panel-title">${t("ui.result")}</div>
+    <div id="pond04-result"></div>
+    <div class="actions" style="margin-top:10px">
+      <button class="btn-secondary" id="pond04-steps-btn">${t("ui.showSteps")}</button>
+    </div>
+    <div id="pond04-steps" class="steps" style="display:none"></div>`;
+  container.appendChild(resultPanel);
+
+  function drawSchema(OAprime, gamma, infinite) {
     svg.innerHTML = "";
     const ns = "http://www.w3.org/2000/svg";
-    const mk = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text !== undefined) e.textContent = text; return e; };
-    svg.appendChild(mk("line", { x1: 20, y1: 130, x2: 580, y2: 130, stroke: "#455A64", "stroke-width": 1 }));
-    svg.appendChild(mk("ellipse", { cx: 300, cy: 130, rx: 10, ry: 60, fill: "#90CAF9", stroke: "#1565C0", "stroke-width": 2 }));
-    svg.appendChild(mk("circle", { cx: 300 + state.fprime * 8, cy: 130, r: 3, fill: "#F57C00" }));
-    svg.appendChild(mk("circle", { cx: 300 - state.fprime * 8, cy: 130, r: 3, fill: "#F57C00" }));
-    const objX = 300 + state.OA * 8;
-    svg.appendChild(mk("line", { x1: objX, y1: 130, x2: objX, y2: 70, stroke: "#2E7D32", "stroke-width": 3 }));
-    svg.appendChild(mk("polygon", { points: `${objX - 5},80 ${objX + 5},80 ${objX},68`, fill: "#2E7D32" }));
-    const { OAprime, infinite } = conjugate(state.OA, state.fprime);
+    const mk = (tag, attrs, text) => {
+      const e = document.createElementNS(ns, tag);
+      for (const k in attrs) e.setAttribute(k, attrs[k]);
+      if (text !== undefined) e.textContent = text;
+      return e;
+    };
+    svg.appendChild(mk("line", { x1: "20", y1: "150", x2: "620", y2: "150", stroke: "#455A64", "stroke-width": "1" }));
+    svg.appendChild(mk("ellipse", { cx: "300", cy: "150", rx: "10", ry: "70", fill: "#90CAF9", stroke: "#1565C0", "stroke-width": "2" }));
+    svg.appendChild(mk("circle", { cx: "300" + state.fprime * 6, cy: "150", r: "4", fill: "#F57C00" }));
+    svg.appendChild(mk("circle", { cx: "300" - state.fprime * 6, cy: "150", r: "4", fill: "#F57C00" }));
+    svg.appendChild(mk("text", { x: "300" + state.fprime * 6, y: "175", "text-anchor": "middle", fill: "#F57C00", "font-size": "11" }, "F'"));
+    svg.appendChild(mk("text", { x: "300" - state.fprime * 6, y: "175", "text-anchor": "middle", fill: "#F57C00", "font-size": "11" }, "F"));
+    const objX = 300 + state.OA * 6;
+    svg.appendChild(mk("line", { x1: objX, y1: "150", x2: objX, y2: "90", stroke: "#2E7D32", "stroke-width": "3" }));
+    svg.appendChild(mk("polygon", { points: `${objX - 5},100 ${objX + 5},100 ${objX},88`, fill: "#2E7D32" }));
+    svg.appendChild(mk("text", { x: objX, y: "80", "text-anchor": "middle", fill: "#2E7D32", "font-size": "11" }, "objet"));
     if (!infinite && isFinite(OAprime)) {
-      const imgX = 300 + OAprime * 8;
-      const h = 60 * Math.abs(OAprime / state.OA);
-      const up = OAprime / state.OA > 0;
-      svg.appendChild(mk("line", { x1: imgX, y1: 130, x2: imgX, y2: up ? 130 - h : 130 + h, stroke: "#C62828", "stroke-width": 3 }));
+      const imgX = 300 + OAprime * 6;
+      const h = 60 * Math.abs(gamma);
+      const up = gamma > 0;
+      svg.appendChild(mk("line", { x1: imgX, y1: "150", x2: imgX, y2: up ? String(150 - h) : String(150 + h), stroke: "#C62828", "stroke-width": "3" }));
+      svg.appendChild(mk("text", { x: imgX, y: "270", "text-anchor": "middle", fill: "#C62828", "font-size": "11" }, "image"));
+    } else {
+      svg.appendChild(mk("text", { x: "550", y: "220", "text-anchor": "middle", fill: "#C62828", "font-size": "13", "font-weight": "bold" }, "image à l'infini"));
     }
-    svg.appendChild(mk("line", { x1: objX, y1: 70, x2: 300, y2: 70, stroke: "#1565C0", "stroke-width": 1 }));
-    svg.appendChild(mk("line", { x1: 300, y1: 70, x2: 300 + state.fprime * 8, y2: 130, stroke: "#1565C0", "stroke-width": 1 }));
   }
-  function readInputs() {
-    const f = parseFloat(document.getElementById("pond04-f").value);
-    const oa = parseFloat(document.getElementById("pond04-oa").value);
-    if (isFinite(f)) state.fprime = f; if (isFinite(oa)) state.OA = oa;
-  }
-  function refresh() { readInputs(); drawLens(); }
-  function randomize() {
-    state.fprime = [10, 15, 20, 25][Math.floor(rng() * 4)];
-    state.OA = -Number((3 + rng() * 40).toFixed(1));
-    document.getElementById("pond04-f").value = state.fprime;
-    document.getElementById("pond04-oa").value = state.OA;
-    state.validated = false;
-    document.getElementById("pond04-status").className = "status"; document.getElementById("pond04-status").textContent = "";
-    document.getElementById("pond04-corr").style.display = "none"; refresh();
-  }
-  function check() {
-    const ans = parseFloat(document.getElementById("pond04-oap").value);
-    const { OAprime, infinite } = conjugate(state.OA, state.fprime);
-    const status = document.getElementById("pond04-status");
-    state.validated = true;
-    if (infinite) { status.className = "status status-hint"; status.textContent = t("pond04.answer.infinity"); return; }
-    if (!isFinite(ans)) { status.className = "status status-hint"; status.textContent = t("status.incorrect"); return; }
-    const rel = Math.abs(ans - OAprime) / Math.max(1, Math.abs(OAprime));
-    if (rel <= 0.05) { status.className = "status status-ok"; status.textContent = t("status.correct") + " (OA' = " + formatSigFigs(OAprime, 3) + " cm)"; }
-    else { status.className = "status status-err"; status.textContent = t("status.incorrect") + " - OA' = " + formatSigFigs(OAprime, 3) + " cm"; }
-    document.getElementById("pond04-corr").style.display = "block";
-    document.getElementById("pond04-corr").innerHTML = "<strong>" + t("report.correction") + " :</strong> OA' = " + formatSigFigs(OAprime, 3) + " cm ; gamma = " + formatSigFigs(OAprime / state.OA, 3) + ".";
-  }
-  document.getElementById("pond04-rand").addEventListener("click", randomize);
-  document.getElementById("pond04-reset").addEventListener("click", () => {
-    state.validated = false; document.getElementById("pond04-oap").value = "";
-    document.getElementById("pond04-status").className = "status"; document.getElementById("pond04-status").textContent = "";
-    document.getElementById("pond04-corr").style.display = "none"; refresh();
-  });
-  document.getElementById("pond04-check").addEventListener("click", check);
-  ["pond04-f", "pond04-oa"].forEach(id => {
-    document.getElementById(id).addEventListener("input", () => {
-      state.validated = false; document.getElementById("pond04-corr").style.display = "none"; refresh();
+
+  function runMeasurement() {
+    state.OA = parseFloat(document.getElementById("pond04-oa").value);
+    document.getElementById("pond04-oa-val").textContent = state.OA + " cm";
+    const { OAprime, gamma, infinite } = conjugate(state.OA, state.fprime);
+    drawSchema(OAprime, gamma, infinite);
+    const grid = document.getElementById("pond04-measures");
+    grid.innerHTML = "";
+    const items = infinite
+      ? [{ label: "OA", value: state.OA.toFixed(1), unit: "cm" },
+         { label: "Image", value: "∞", unit: "" },
+         { label: "γ", value: "∞", unit: "" }]
+      : [{ label: "OA", value: state.OA.toFixed(1), unit: "cm" },
+         { label: "OA'", value: OAprime.toFixed(1), unit: "cm" },
+         { label: "γ", value: gamma.toFixed(2), unit: "" }];
+    items.forEach(m => {
+      const card = document.createElement("div");
+      card.className = "measure-card";
+      card.innerHTML = `<div class="measure-label">${m.label}</div>
+        <div class="measure-value">${m.value}</div>
+        <div class="measure-unit">${m.unit}</div>`;
+      grid.appendChild(card);
     });
+    const result = document.getElementById("pond04-result");
+    result.innerHTML = infinite
+      ? `<div class="measure-card" style="text-align:left">
+          <div class="measure-label">Image</div>
+          <div class="measure-value" style="font-size:22px">à l'infini</div>
+          <div class="measure-unit">OA = −f'</div>
+        </div>`
+      : `<div class="measure-card" style="text-align:left">
+          <div class="measure-label">Position de l'image</div>
+          <div class="measure-value" style="font-size:26px">${OAprime.toFixed(1)} cm</div>
+          <div class="measure-unit">γ = ${gamma.toFixed(2)} (${gamma < 0 ? "renversée" : "droite"})</div>
+        </div>`;
+    const steps = document.getElementById("pond04-steps");
+    steps.innerHTML = "";
+    const stepData = infinite
+      ? [
+          { title: "Relation de conjugaison", body: `<span class="step-formula">1/OA' − 1/OA = 1/f'</span>` },
+          { title: "Cas particulier", body: `OA = −f' → 1/OA' = 0 → OA' → ∞ : image à l'infini.` }
+        ]
+      : [
+          { title: "Relation de conjugaison", body: `<span class="step-formula">1/OA' − 1/OA = 1/f'</span>` },
+          { title: "Données", body: `f' = ${state.fprime} cm · OA = ${state.OA.toFixed(1)} cm` },
+          { title: "Calcul OA'", body: `<span class="step-formula">1/OA' = 1/${state.fprime} + 1/(${state.OA.toFixed(1)}) → OA' = ${OAprime.toFixed(2)} cm</span>` },
+          { title: "Grandissement", body: `<span class="step-formula">γ = OA'/OA = ${gamma.toFixed(2)}</span>` },
+          { title: "Image", body: gamma < 0 ? "L'image est réelle et renversée." : "L'image est virtuelle et droite." }
+        ];
+    stepData.forEach((s, i) => {
+      const div = document.createElement("div");
+      div.className = "step";
+      div.innerHTML = `<div class="step-num">${i + 1}</div>
+        <div class="step-body"><strong>${s.title}</strong><br>${s.body}</div>`;
+      steps.appendChild(div);
+    });
+  }
+
+  document.getElementById("pond04-oa").addEventListener("input", (e) => {
+    document.getElementById("pond04-oa-val").textContent = e.target.value + " cm";
   });
-  refresh();
+  document.getElementById("pond04-run").addEventListener("click", runMeasurement);
+  document.getElementById("pond04-rand").addEventListener("click", () => {
+    const oa = -Number((3 + rng() * 40).toFixed(1));
+    document.getElementById("pond04-oa").value = oa;
+    document.getElementById("pond04-oa-val").textContent = oa.toFixed(1) + " cm";
+    runMeasurement();
+  });
+  document.getElementById("pond04-steps-btn").addEventListener("click", () => {
+    const s = document.getElementById("pond04-steps");
+    const btn = document.getElementById("pond04-steps-btn");
+    if (s.style.display === "none") { s.style.display = "flex"; btn.textContent = t("ui.hideSteps"); }
+    else { s.style.display = "none"; btn.textContent = t("ui.showSteps"); }
+  });
+
+  runMeasurement();
   return function cleanup() {};
 }
