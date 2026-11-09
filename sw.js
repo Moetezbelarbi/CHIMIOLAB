@@ -1,4 +1,4 @@
-const CACHE_VERSION = "chimiolab-v1.0.0";
+const CACHE_VERSION = "chimiolab-v2.0.0";
 const PRECACHE = [
   "./",
   "./index.html",
