@@ -84,7 +84,7 @@ export function mount(container) {
     svg.appendChild(mk("line", { x1: "240", y1: "120", x2: "270", y2: "120", stroke: "#FF1744", "stroke-width": "2" }));
     svg.appendChild(mk("rect", { x: "270", y: "90", width: "40", height: "60", rx: "4", fill: "#546E7A", stroke: "#455A64", "stroke-width": "2" }));
     svg.appendChild(mk("text", { x: "290", y: "180", "text-anchor": "middle", fill: "#455A64", "font-size": "11" }, "détecteur"));
-    svg.appendChild(mk("rect", { x: "340", y: "70", width: "260" , height: "100", rx: "8", fill: "#263238" }));
+    svg.appendChild(mk("rect", { x: "340", y: "70", width: "260", height: "100", rx: "8", fill: "#263238" }));
     svg.appendChild(mk("text", { x: "470", y: "110", "text-anchor": "middle", fill: "#00E676", "font-size": "18", "font-family": "monospace", "font-weight": "bold" }, "t½ = " + th.toFixed(2) + " s"));
     svg.appendChild(mk("text", { x: "470", y: "140", "text-anchor": "middle", fill: "#B0BEC5", "font-size": "12" }, "suivi spectrophotométrique"));
   }
