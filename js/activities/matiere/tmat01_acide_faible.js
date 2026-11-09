@@ -91,7 +91,7 @@ export function mount(container) {
     svg.appendChild(mk("text", { x: "145", y: "230", "text-anchor": "middle", fill: "#455A64", "font-size": "11" }, "bécher · acide faible"));
     svg.appendChild(mk("rect", { x: "115", y: "110", width: "10", height: "60", fill: "#B0BEC5", stroke: "#37474F" }));
     svg.appendChild(mk("rect", { x: "155", y: "110", width: "10", height: "60", fill: "#B0BEC5", stroke: "#37474F" }));
-    svg.appendChild(mk("rect", { x: "400", y: "60", width: "180"高度: "100", rx: "8", fill: "#ECEFF1", stroke: "#455A64", "stroke-width": "2" }));
+    svg.appendChild(mk("rect", { x: "400", y: "60", width: "180", height: "100", rx: "8", fill: "#ECEFF1", stroke: "#455A64", "stroke-width": 2 }));
     svg.appendChild(mk("rect", { x: "412", y: "72", width: "156", height: "60", rx: "4", fill: "#263238" }));
     svg.appendChild(mk("text", { x: "490", y: "110", "text-anchor": "middle", fill: "#00E676", "font-size": "22", "font-family": "monospace", "font-weight": "bold" }, "pH = " + pH.toFixed(2)));
     svg.appendChild(mk("text", { x: "490", y: "145", "text-anchor": "middle", fill: "#78909C", "font-size": "11" }, "pH-mètre"));
