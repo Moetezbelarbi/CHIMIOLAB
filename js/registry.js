@@ -1,4 +1,4 @@
-import * as pmat04 from "./activities/pmat04_titrage_ph.js";
+import * as pmat04 from "./activities/matiere/pmat04_titrage_ph.js";
 
 export const ACTIVITIES = new Map();
 function register(mod) {
