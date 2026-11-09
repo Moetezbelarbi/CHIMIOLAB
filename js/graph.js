@@ -35,22 +35,39 @@ export class Graph {
     ctx.fillStyle = opts.bg; ctx.fillRect(0, 0, W, H);
     const { padding } = opts;
     ctx.strokeStyle = opts.grid; ctx.lineWidth = 1;
-    const nx = 5, ny = 5;
-    for (let i = 0; i <= nx; i++) { const x = opts.xmin + (opts.xmax - opts.xmin) * i / nx; const px = this._xToPx(x); ctx.beginPath(); ctx.moveTo(px, padding.t); ctx.lineTo(px, H - padding.b); ctx.stroke(); }
-    for (let i = 0; i <= ny; i++) { const y = opts.ymin + (opts.ymax - opts.ymin) * i / ny; const py = this._yToPx(y); ctx.beginPath(); ctx.moveTo(padding.l, py); ctx.lineTo(W - padding.r, py); ctx.stroke(); }
+    for (let i = 0; i <= 5; i++) {
+      const x = opts.xmin + (opts.xmax - opts.xmin) * i / 5;
+      const px = this._xToPx(x);
+      ctx.beginPath(); ctx.moveTo(px, padding.t); ctx.lineTo(px, H - padding.b); ctx.stroke();
+    }
+    for (let i = 0; i <= 5; i++) {
+      const y = opts.ymin + (opts.ymax - opts.ymin) * i / 5;
+      const py = this._yToPx(y);
+      ctx.beginPath(); ctx.moveTo(padding.l, py); ctx.lineTo(W - padding.r, py); ctx.stroke();
+    }
     ctx.strokeStyle = opts.fg; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(padding.l, padding.t); ctx.lineTo(padding.l, H - padding.b); ctx.lineTo(W - padding.r, H - padding.b); ctx.stroke();
     ctx.fillStyle = opts.fg; ctx.font = "11px system-ui, sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "top";
-    for (let i = 0; i <= nx; i++) { const x = opts.xmin + (opts.xmax - opts.xmin) * i / nx; const px = this._xToPx(x); ctx.fillText(this._fmt(x), px, H - padding.b + 4); }
+    for (let i = 0; i <= 5; i++) {
+      const x = opts.xmin + (opts.xmax - opts.xmin) * i / 5;
+      ctx.fillText(this._fmt(x), this._xToPx(x), H - padding.b + 4);
+    }
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for (let i = 0; i <= ny; i++) { const y = opts.ymin + (opts.ymax - opts.ymin) * i / ny; const py = this._yToPx(y); ctx.fillText(this._fmt(y), padding.l - 6, py); }
+    for (let i = 0; i <= 5; i++) {
+      const y = opts.ymin + (opts.ymax - opts.ymin) * i / 5;
+      ctx.fillText(this._fmt(y), padding.l - 6, this._yToPx(y));
+    }
     ctx.textAlign = "center"; ctx.textBaseline = "bottom";
     ctx.fillText(opts.xlabel, padding.l + (W - padding.l - padding.r) / 2, H - 4);
-    ctx.save(); ctx.translate(12, padding.t + (H - padding.t - padding.b) / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = "top"; ctx.fillText(opts.ylabel, 0, 0); ctx.restore();
     (opts.series || []).forEach(s => this._drawSeries(s));
   }
-  _fmt(v) { if (Math.abs(v) >= 1000) return v.toFixed(0); if (Math.abs(v) >= 10) return v.toFixed(1); if (Math.abs(v) >= 1) return v.toFixed(2); return v.toFixed(3); }
+  _fmt(v) {
+    if (Math.abs(v) >= 1000) return v.toFixed(0);
+    if (Math.abs(v) >= 10) return v.toFixed(1);
+    if (Math.abs(v) >= 1) return v.toFixed(2);
+    return v.toFixed(3);
+  }
   _drawSeries(s) {
     if (!s || !s.points || s.points.length === 0) return;
     const ctx = this.ctx;
@@ -59,7 +76,9 @@ export class Graph {
     ctx.fillStyle = s.color || "#1565C0";
     ctx.lineWidth = s.width || 2;
     if (s.width === 0) {
-      for (const p of s.points) { const px = this._xToPx(p.x), py = this._yToPx(p.y); ctx.beginPath(); ctx.arc(px, py, 3, 0, 2 * Math.PI); ctx.fill(); }
+      for (const p of s.points) {
+        ctx.beginPath(); ctx.arc(this._xToPx(p.x), this._yToPx(p.y), 3, 0, 2 * Math.PI); ctx.fill();
+      }
     } else {
       if (s.dash) ctx.setLineDash(s.dash);
       ctx.beginPath();
