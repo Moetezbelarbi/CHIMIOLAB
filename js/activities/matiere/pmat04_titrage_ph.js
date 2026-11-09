@@ -1,6 +1,6 @@
-import { t } from "../i18n.js";
-import { Graph } from "../graph.js";
-import { makeRng, addNoise, roundToResolution } from "../measure.js";
+import { t } from "../../i18n.js";
+import { Graph } from "../../graph.js";
+import { makeRng, addNoise, roundToResolution } from "../../measure.js";
 
 const KA = 10 ** -4.75;
 const KE = 1e-14;
