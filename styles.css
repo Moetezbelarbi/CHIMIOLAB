@@ -84,21 +84,3 @@ h1 { font-size: 26px; margin: 0 0 16px; color: var(--primary-dark); }
   .app-header, .app-footer, .actions, button { display: none !important; }
   body { background: #fff; }
 }
-/* Tableau de valeurs */
-.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.data-table th, .data-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: center; }
-.data-table th { background: var(--primary-light); color: var(--primary-dark); font-weight: 700; }
-.data-table tr:nth-child(even) td { background: #FAFCFF; }
-.table-wrap { max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
-
-/* Burette interactive */
-.burette-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.burette-controls button { flex: 1; min-width: 120px; }
-.btn-tap { background: var(--ok); color: #fff; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 700; cursor: pointer; }
-.btn-tap.active { background: var(--error); }
-.btn-tap:hover { opacity: 0.9; }
-
-/* Résumé / démarche */
-.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (min-width: 640px) { .summary-grid { grid-template-columns: repeat(3, 1fr); } }
-.highlight { background: #E8F5E9; color: var(--ok); font-weight: 700; padding: 2px 6px; border-radius: 6px; }
