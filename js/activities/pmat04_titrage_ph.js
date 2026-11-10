@@ -53,7 +53,8 @@ export function mount(container) {
     measurements: [],
     seed: Date.now() & 0xffffff,
     finished: false,
-    interval: null
+    interval: null,
+    indicator: "none" // "none" | "phenolphtaleine" | "bbt"
   };
   const rng = makeRng(state.seed);
 
@@ -78,6 +79,14 @@ export function mount(container) {
     <div class="field">
       <label for="pmat04-cb">${t("pmat04.input.cbase")} (mol/L)</label>
       <input id="pmat04-cb" type="number" step="0.001" min="0.010" max="0.500" value="${state.Cb}">
+    </div>
+    <div class="field">
+      <label for="pmat04-ind">Indicateur coloré (optionnel)</label>
+      <select id="pmat04-ind">
+        <option value="none">Aucun (pH-métrie seule)</option>
+        <option value="phenolphtaleine">Phénolphtaléine (virage à pH 8,2 - 10)</option>
+        <option value="bbt">BBT (virage à pH 6,0 - 7,6)</option>
+      </select>
     </div>
     <div class="actions">
       <button class="btn-secondary" id="pmat04-reset">Recommencer</button>
@@ -107,21 +116,25 @@ export function mount(container) {
     </div>`;
   container.appendChild(controls);
 
-  // ===== TABLEAU (AVANT COURBE) =====
+  // ===== TABLEAU =====
   const tablePanel = document.createElement("div");
   tablePanel.className = "panel";
   tablePanel.innerHTML = `
     <div class="panel-title">${t("pmat04.table.title")}</div>
-    <div class="table-wrap">
+    <div class="table-wrap" id="pmat04-table-wrap">
       <table class="data-table">
         <thead><tr>
           <th>${t("pmat04.table.volume")}</th>
           <th>${t("pmat04.table.pH")}</th>
+          <th>${t("pmat04.table.deriv")}</th>
         </tr></thead>
         <tbody id="pmat04-tbody"></tbody>
       </table>
     </div>
-    <div id="pmat04-table-empty" style="color:var(--muted);font-size:13px;margin-top:8px;">${t("pmat04.table.empty")}</div>`;
+    <div id="pmat04-table-empty" style="color:var(--muted);font-size:13px;margin-top:8px;">${t("pmat04.table.empty")}</div>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn" id="pmat04-print">${t("pmat04.print")}</button>
+    </div>`;
   container.appendChild(tablePanel);
 
   // ===== GRAPHE =====
@@ -149,6 +162,7 @@ export function mount(container) {
     state.exempleKey = document.getElementById("pmat04-exemple").value;
     state.Ca = EXEMPLES[state.exempleKey].Ca;
     state.Ka = EXEMPLES[state.exempleKey].Ka;
+    state.indicator = document.getElementById("pmat04-ind").value;
     
     const vas = document.getElementsByName("pmat04-va");
     for (let r of vas) { if (r.checked) state.Va = parseFloat(r.value); }
@@ -167,16 +181,16 @@ export function mount(container) {
       return e;
     };
 
-    // Support universel
+    // Support
     svg.appendChild(mk("rect", { x: "60", y: "390", width: "120", height: "15", rx: "5", fill: "#607D8B" }));
     svg.appendChild(mk("rect", { x: "110", y: "20", width: "10", height: "370", fill: "#78909C" }));
     svg.appendChild(mk("rect", { x: "100", y: "80", width: "20", height: "12", fill: "#546E7A" }));
     svg.appendChild(mk("rect", { x: "120", y: "70", width: "20", height: "32", fill: "#455A64" }));
 
-    // Burette (0 en haut, 25 en bas)
+    // Burette
     svg.appendChild(mk("rect", { x: "180", y: "30", width: "20", height: "250", rx: "3", fill: "rgba(255,255,255,0.9)", stroke: "#455A64", "stroke-width": "2" }));
     
-    // Robinet (position basse)
+    // Robinet
     const tapColor = state.tapOpen ? "#2E7D32" : "#C62828";
     const tapGroup = mk("g", { style: "cursor: pointer;" });
     tapGroup.addEventListener("click", toggleTap);
@@ -193,10 +207,9 @@ export function mount(container) {
       if (i % 5 === 0) svg.appendChild(mk("text", { x: "165", y: y + 4, "font-size": "10", fill: "#455A64", "text-anchor": "end" }, (i * 2.5).toFixed(1)));
     }
 
-    // Liquide dans la burette (descend quand V augmente)
+    // Liquide
     const fillHeight = Math.max(0, 230 * (1 - state.V / 25));
     svg.appendChild(mk("rect", { x: "182", y: "40", width: "16", height: fillHeight, fill: "#90CAF9", opacity: "0.6" }));
-    // Ménisque (concave)
     if (fillHeight > 5) {
       svg.appendChild(mk("path", { d: `M182 ${40 + fillHeight} Q190 ${46 + fillHeight} 198 ${40 + fillHeight}`, stroke: "#0D47A1", "stroke-width": "2", fill: "none" }));
     }
@@ -206,13 +219,24 @@ export function mount(container) {
       d: "M170 360 L210 360 L210 370 L235 400 L145 400 L170 370 Z", 
       fill: "rgba(255,255,255,0.8)", stroke: "#455A64", "stroke-width": "2" 
     }));
-    // Solution dans l'erlenmeyer
+    
+    // Couleur de la solution (indicateur)
+    let liquidColor = "#90CAF9";
+    let liquidOpacity = 0.5;
+    if (state.indicator === "phenolphtaleine") {
+       const currentPH = state.measurements.length ? state.measurements[state.measurements.length-1].pH : pHExact(state.Ca, state.Va, state.Cb, 0, state.Ka);
+       if (currentPH > 8.2) { liquidColor = "#E91E63"; liquidOpacity = 0.8; }
+    } else if (state.indicator === "bbt") {
+       const currentPH = state.measurements.length ? state.measurements[state.measurements.length-1].pH : pHExact(state.Ca, state.Va, state.Cb, 0, state.Ka);
+       if (currentPH > 7.6) { liquidColor = "#1565C0"; liquidOpacity = 0.8; }
+       else if (currentPH > 6.0) { liquidColor = "#8BC34A"; liquidOpacity = 0.8; }
+    }
     svg.appendChild(mk("path", { 
       d: "M155 385 L225 385 L235 400 L145 400 Z", 
-      fill: "#90CAF9", opacity: "0.5" 
+      fill: liquidColor, opacity: liquidOpacity 
     }));
 
-    // Agitateur magnétique
+    // Agitateur
     svg.appendChild(mk("rect", { x: "130", y: "400", width: "120", height: "12", rx: "3", fill: "#ECEFF1", stroke: "#455A64", "stroke-width": "1.5" }));
     svg.appendChild(mk("rect", { x: "180", y: "394", width: "20", height: "6", fill: "#37474F", rx: "3" }));
 
@@ -228,9 +252,7 @@ export function mount(container) {
     svg.appendChild(mk("path", { d: "M440 130 C 380 200, 300 300, 200 385", fill: "none", stroke: "#455A64", "stroke-width": "3" }));
     svg.appendChild(mk("circle", { cx: "200", cy: "385", r: "6", fill: "#546E7A" }));
 
-    // Textes
-    svg.appendChild(mk("text", { x: "190", y: "20", "text-anchor": "middle", fill: "#455A64", "font-size": "11" }, "Burette"));
-    svg.appendChild(mk("text", { x: "190", y: "420", "text-anchor": "middle", fill: "#455A64", "font-size": "11" }, "Erlenmeyer"));
+    // Volume
     svg.appendChild(mk("text", { x: "500", y: "200", "text-anchor": "middle", fill: "#1565C0", "font-size": "16", "font-weight": "bold" }, "V versé = " + state.V.toFixed(2) + " mL"));
   }
 
@@ -270,11 +292,22 @@ export function mount(container) {
   function redrawTable() {
     const tbody = document.getElementById("pmat04-tbody");
     tbody.innerHTML = "";
-    state.measurements.forEach(m => {
+    state.measurements.forEach((m, i) => {
+      let deriv = "";
+      if (i > 0) {
+        const prev = state.measurements[i - 1];
+        if (m.V !== prev.V) {
+          deriv = ((m.pH - prev.pH) / (m.V - prev.V)).toFixed(2);
+        }
+      }
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${m.V.toFixed(2)}</td><td>${m.pH.toFixed(2)}</td>`;
+      tr.innerHTML = `<td>${m.V.toFixed(2)}</td><td>${m.pH.toFixed(2)}</td><td>${deriv}</td>`;
       tbody.appendChild(tr);
     });
+    
+    const wrap = document.getElementById("pmat04-table-wrap");
+    if (wrap) wrap.scrollTop = wrap.scrollHeight;
+    
     document.getElementById("pmat04-table-empty").style.display = state.measurements.length ? "none" : "block";
   }
 
@@ -299,7 +332,6 @@ export function mount(container) {
   function addMeasurement(dV) {
     if (state.V >= 25) return;
     
-    // Ajout du point initial à V=0 si le tableau est vide
     if (state.measurements.length === 0) {
         const pH0 = pHExact(state.Ca, state.Va, state.Cb, 0, state.Ka);
         state.measurements.push({ V: 0, pH: roundToResolution(addNoise(pH0, 0.01, rng, 1), 0.01) });
@@ -326,7 +358,7 @@ export function mount(container) {
       clearInterval(state.interval);
       state.interval = setInterval(() => {
         if (state.V >= 25) { toggleTap(); return; }
-        addMeasurement(0.05); // goutte à goutte
+        addMeasurement(0.05);
       }, 600);
     } else {
       clearInterval(state.interval);
@@ -351,6 +383,7 @@ export function mount(container) {
 
   // ===== ÉVÉNEMENTS =====
   document.getElementById("pmat04-exemple").addEventListener("change", resetAll);
+  document.getElementById("pmat04-ind").addEventListener("change", resetAll);
   document.getElementsByName("pmat04-va").forEach(r => r.addEventListener("change", resetAll));
   document.getElementById("pmat04-cb").addEventListener("change", resetAll);
   document.getElementById("pmat04-reset").addEventListener("click", resetAll);
@@ -372,6 +405,39 @@ export function mount(container) {
     const btn = document.getElementById("pmat04-steps-btn");
     if (s.style.display === "none") { s.style.display = "flex"; btn.textContent = "Masquer la démarche"; redrawSteps(); }
     else { s.style.display = "none"; btn.textContent = "Afficher la démarche complète"; }
+  });
+
+  document.getElementById("pmat04-print").addEventListener("click", () => {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    const doc = w.document;
+    const VE = findEquivalence(state.Ca, state.Va, state.Cb);
+    
+    doc.open();
+    doc.write("<!doctype html><html><head><meta charset='utf-8'><title>" + t("pmat04.print.title") + "</title>");
+    doc.write("<style>body{font-family:system-ui;margin:2em;color:#222}h1{color:#1565C0}table{border-collapse:collapse;width:80%;margin-top:1em}th,td{border:1px solid #ccc;padding:6px;text-align:center}th{background:#E3F2FD}.info{margin:1em 0;background:#F5F5F5;padding:10px;border-radius:8px}.calc{background:#FFF3E0;padding:10px;border-radius:8px;margin-top:10px}</style></head><body>");
+    doc.write("<h1>" + t("pmat04.print.title") + "</h1>");
+    doc.write("<div class='info'><strong>" + EXEMPLES[state.exempleKey].label + "</strong><br>Solution titrée : V_a = " + state.Va + " mL · Solution titrante : C_b = " + state.Cb.toFixed(3) + " mol/L</div>");
+    
+    const dataURL = canvas.toDataURL("image/png");
+    doc.write("<h2>Courbe pH = f(V)</h2>");
+    doc.write("<img src='" + dataURL + "' style='max-width:100%;border:1px solid #ccc;border-radius:8px;'>");
+    
+    doc.write("<h2>Tableau de valeurs</h2><table><tr><th>V (mL)</th><th>pH</th></tr>");
+    state.measurements.forEach(m => {
+      doc.write("<tr><td>" + m.V.toFixed(2) + "</td><td>" + m.pH.toFixed(2) + "</td></tr>");
+    });
+    doc.write("</table>");
+
+    doc.write("<div class='calc'><h3>" + t("pmat04.print.calc") + "</h3>");
+    doc.write("<p>À l'équivalence, on a : C_a · V_a = C_b · V_E</p>");
+    doc.write("<p>Le volume équivalent lu par la méthode des tangentes est V_E = " + VE.toFixed(2) + " mL.</p>");
+    doc.write("<p><strong>Donc C_a = (C_b · V_E) / V_a = (" + state.Cb.toFixed(3) + " × " + VE.toFixed(2) + ") / " + state.Va + " = " + state.Ca.toFixed(3) + " mol/L</strong></p>");
+    doc.write("</div>");
+    
+    doc.write("</body></html>");
+    doc.close();
+    w.print();
   });
 
   // ===== INITIALISATION =====
