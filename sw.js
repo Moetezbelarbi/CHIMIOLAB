@@ -1,4 +1,4 @@
-const CACHE_VERSION = "chimiolab-v3.0.1";
+const CACHE_VERSION = "chimiolab-v3.0.0";
 const PRECACHE = [
   "./", "./index.html", "./manifest.webmanifest", "./styles.css",
   "./js/config.js", "./js/i18n.js", "./js/main.js", "./js/router.js", "./js/registry.js",
