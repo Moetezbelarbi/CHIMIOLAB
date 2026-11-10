@@ -94,3 +94,8 @@ h1 { font-size: 26px; margin: 0 0 16px; color: var(--primary-dark); }
   .app-header, .app-footer, .actions, button { display: none !important; }
   body { background: #fff; }
 }
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table th, .data-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: center; }
+.data-table th { background: var(--primary-light); color: var(--primary-dark); font-weight: 700; }
+.data-table tr:nth-child(even) td { background: #FAFCFF; }
+.table-wrap { max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
