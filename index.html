@@ -1,30 +1,36 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="light">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Chimiolab</title>
-<meta name="theme-color" content="#1565C0">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Chimiolab — Laboratoire Virtuel de Physique-Chimie</title>
+  <meta name="description" content="Plateforme de simulation numérique de travaux pratiques de physique-chimie pour le lycée français (Seconde, Première, Terminale)">
+  <meta name="theme-color" content="#1565C0">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="app-header">
-  <div class="brand">
-    <span class="logo" aria-hidden="true">C</span>
-    <span class="app-name">Chimiolab</span>
-  </div>
-  <div class="header-actions">
-    <select id="lang-select" aria-label="Langue">
-      <option value="fr">FR</option>
-      <option value="en">EN</option>
-    </select>
-  </div>
-</header>
-<main id="app" role="main"></main>
-<footer class="app-footer">
-  <span>Auteur : M. Belarbi</span>
-</footer>
-<script type="module" src="js/main.js"></script>
+  <header class="app-header">
+    <div class="brand" id="brand-logo" role="button" tabindex="0" aria-label="Accueil Chimiolab">
+      <span class="logo" aria-hidden="true">C</span>
+      <span class="app-name">Chimiolab</span>
+    </div>
+    <div class="header-actions">
+      <button id="theme-toggle" type="button" aria-label="Changer de thème">🌙</button>
+      <select id="lang-select" aria-label="Langue">
+        <option value="fr">FR</option>
+        <option value="en">EN</option>
+      </select>
+    </div>
+  </header>
+
+  <main id="app" role="main"></main>
+
+  <footer class="app-footer">
+    <span>Chimiolab • Laboratoire Virtuel Gratuit &amp; Libre • Conforme aux programmes BOEN</span>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
